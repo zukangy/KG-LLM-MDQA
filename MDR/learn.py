@@ -1,7 +1,7 @@
 import torch
 from torch.nn import CrossEntropyLoss
 from tqdm import tqdm
-from utils import move_to_cuda, move_to_cuda2
+from KG_LLM_MDQA.MDR.utils import move_to_cuda
 import numpy as np
 
 def train(model, dataloader, optimizer, scheduler, args):
@@ -9,13 +9,13 @@ def train(model, dataloader, optimizer, scheduler, args):
     losses = []
 
     for batch in tqdm(dataloader):
-        batch = move_to_cuda2(batch)
+        batch = move_to_cuda(batch, device=args['gpus'])
 
         loss = mp_loss(model, batch)
 
         loss.backward()
 
-        torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), args['max_grad_norm'])
 
         optimizer.step()
         scheduler.step()
@@ -53,12 +53,12 @@ def mp_loss(model, batch):
     return loss
 
 @torch.no_grad()
-def eval(model, dataloader):
+def eval(model, dataloader, args):
     model.eval()
 
     rrs_1, rrs_2 = [], []
     for batch in tqdm(dataloader):
-        batch = move_to_cuda2(batch)
+        batch = move_to_cuda(batch, device=args['gpus'])
 
         embs = model(batch)
         eval_results = mhop_eval(embs)

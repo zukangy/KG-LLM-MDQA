@@ -1,14 +1,30 @@
 import torch.nn as nn
 from transformers import AutoModel
-import numpy as np
 import torch
 
 class Retriever(nn.Module):
     def __init__(self, config, args):
         super().__init__()
 
-        self.encoder = AutoModel.from_pretrained(args.model_name)
-        self.project = nn.Sequential(nn.Linear(config.hidden_size, config.hidden_size), nn.LayerNorm(config.hidden_size, eps = config.layer_norm_eps))
+        self.encoder = AutoModel.from_pretrained(args['model_name'])
+        
+        # Freeze some layers
+        if args['freeze_layers'] > 0:  
+            model_config = self.encoder.config
+            if args['freeze_layers'] >= model_config.num_hidden_layers:
+                for param in self.encoder.parameters():
+                    param.requires_grad = False
+                    
+            elif args['freeze_layers'] < model_config.num_hidden_layers:
+                # Freeze the parameters of the specified layers
+                for name, param in self.encoder.named_parameters():
+                    # Layers to be frozen are prefixed with 'encoder.layer' followed by the layer index
+                    layer_index = name.split('.')[2]
+                    if name.startswith('encoder.layer') and int(layer_index) < args['freeze_layers']:
+                        param.requires_grad = False
+        
+        self.project = nn.Sequential(nn.Linear(config.hidden_size, config.hidden_size), 
+                                     nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps))
 
     def encode_seq(self, input_ids, mask):
         cls_rep = self.encoder(input_ids, mask)[0][:, 0, :]
@@ -37,8 +53,8 @@ class Retriever_inf(nn.Module):
     def __init__(self, config, args):
         super().__init__()
 
-        self.encoder = AutoModel.from_pretrained(args.model_name)
-        self.project = nn.Sequential(nn.Linear(config.hidden_size, config.hidden_size), nn.LayerNorm(config.hidden_size, eps = config.layer_norm_eps))
+        self.encoder = AutoModel.from_pretrained(args['model_name'])
+        self.project = nn.Sequential(nn.Linear(config.hidden_size, config.hidden_size), nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps))
     
     def encode_seq(self, input_ids, mask):
         cls_rep = self.encoder(input_ids, mask)[0][:, 0, :]

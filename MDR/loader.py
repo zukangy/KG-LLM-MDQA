@@ -7,9 +7,9 @@ class Dataset_process(Dataset):
         super().__init__()
 
         self.tokenizer = tokenizer
-        self.max_len = args.max_len
-        self.max_q_len = args.max_q_len
-        self.max_q_sp_len = args.max_q_sp_len
+        self.max_len = args['max_len']
+        self.max_q_len = args['max_q_len']
+        self.max_q_sp_len = args['max_q_sp_len']
 
         self.data = data
 
@@ -102,7 +102,7 @@ class Dataset_process2(Dataset):
         n1_enc = self.encode_chunk_pair(d['neg_paras'][0]['title'].strip(), d['neg_paras'][0]['text'].strip(), self.max_len)
         n2_enc = self.encode_chunk_pair(d['neg_paras'][1]['title'].strip(), d['neg_paras'][1]['text'].strip(), self.max_len)
 
-        q_enc = self.encode_chunk(question, max_len = self.max_q_len)
+        q_enc = self.encode_chunk(question, max_len=self.max_q_len)
         q_c1_enc = self.encode_chunk_pair(question, start_para['text'].strip(), self.max_q_sp_len)
 
         
